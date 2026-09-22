@@ -1,11 +1,12 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for
+
 from dotenv import load_dotenv
+from flask import Flask, redirect, render_template, request, url_for
 
 load_dotenv()
 
 import db  # noqa: E402  (import after load_dotenv so os.environ is populated)
-from validation import validate_submission, ValidationError  # noqa: E402
+from validation import ValidationError, validate_submission  # noqa: E402
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 64 * 1024  # 64 KB — well above any legitimate submission
