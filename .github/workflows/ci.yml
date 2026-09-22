@@ -10,10 +10,21 @@ defaults:
   run:
     working-directory: app
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   secrets-scan:
     name: Secret scan
     runs-on: ubuntu-latest
+    # Dependabot-authored PR runs get a near-zero-permission token regardless
+    # of what this workflow requests (a GitHub Actions security restriction,
+    # not something we can grant around) — gitleaks-action's PR-commit-listing
+    # API call 403s every time. Dependabot only ever changes version pins in
+    # requirements.txt, so skipping this one actor here is low-risk; every
+    # other push/PR still gets scanned normally.
+    if: github.actor != 'dependabot[bot]'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -21,6 +32,8 @@ jobs:
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
+          GITLEAKS_ENABLE_SUMMARY: "true"
 
   lint:
     name: Lint (ruff)
