@@ -3,13 +3,32 @@ services:
     image: postgres:16
     restart: unless-stopped
     environment:
-      POSTGRES_DB: contactform
-      POSTGRES_USER: contactform
-      POSTGRES_PASSWORD: localdevpassword
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required — copy .env.example to .env}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required — copy .env.example to .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required — copy .env.example to .env}
     ports:
-      - "5433:5432"
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: ./app
+    restart: unless-stopped
+    env_file:
+      - app/.env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   pgdata:
