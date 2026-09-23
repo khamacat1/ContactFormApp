@@ -62,6 +62,31 @@ jobs:
       - name: Run pip-audit
         run: pip install pip-audit==2.7.3 && pip-audit -r requirements.txt
 
+  docker-build:
+    name: Docker build + smoke test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: contactform
+          POSTGRES_USER: contactform
+          POSTGRES_PASSWORD: smoketestpassword
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U contactform"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Docker smoke test
+        env:
+          SMOKE_DB_PORT: "5432"
+          SMOKE_DB_PASSWORD: "smoketestpassword"
+        run: bash tests/docker_smoke_test.sh
+
   test:
     name: Test (pytest)
     runs-on: ubuntu-latest
