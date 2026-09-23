@@ -9,12 +9,15 @@
     input, textarea { width: 100%; padding: 8px; box-sizing: border-box; }
     button { margin-top: 16px; padding: 10px 20px; }
     .error { color: #b00020; }
-    table { width: 100%; border-collapse: collapse; margin-top: 32px; }
-    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #ddd; font-size: 14px; }
+    .success { color: #1a7f37; }
   </style>
 </head>
 <body>
   <h1>Contact Us</h1>
+
+  {% if submitted %}
+    <p class="success">Thank you — your message has been received.</p>
+  {% endif %}
 
   {% if error %}
     <p class="error">{{ error }}</p>
@@ -32,18 +35,5 @@
 
     <button type="submit">Submit</button>
   </form>
-
-  <h2>Recent Submissions</h2>
-  <table>
-    <tr><th>Name</th><th>Email</th><th>Message</th><th>Submitted</th></tr>
-    {% for s in submissions %}
-    <tr>
-      <td>{{ s[1] }}</td>
-      <td>{{ s[2] }}</td>
-      <td>{{ s[3] }}</td>
-      <td>{{ s[4] }}</td>
-    </tr>
-    {% endfor %}
-  </table>
 </body>
 </html>
