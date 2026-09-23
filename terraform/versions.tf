@@ -9,9 +9,6 @@ terraform {
   }
 
   backend "s3" {
-    # Values intentionally hardcoded, not variables — Terraform backend
-    # blocks cannot reference variables/locals (they're needed before any
-    # configuration is evaluated). Must match the bootstrap config's outputs.
     bucket         = "contactform-tfstate-878585013555"
     key            = "contactform/terraform.tfstate"
     region         = "ap-southeast-1"

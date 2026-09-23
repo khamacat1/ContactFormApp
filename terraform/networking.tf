@@ -1,3 +1,5 @@
+# Setup VPC
+
 data "aws_availability_zones" "available" {
   state = "available"
 }
@@ -20,6 +22,8 @@ resource "aws_internet_gateway" "main" {
   }
 }
 
+# Adding subnets
+
 # Public subnets — one per AZ. Only the ALB and the NAT Gateway live here.
 resource "aws_subnet" "public" {
   count                   = var.az_count
@@ -30,8 +34,6 @@ resource "aws_subnet" "public" {
 
   tags = {
     Name = "${var.project_name}-public-${data.aws_availability_zones.available.names[count.index]}"
-    # Lets the AWS Load Balancer Controller (installed via Ansible later)
-    # auto-discover which subnets to place a public-facing ALB into.
     "kubernetes.io/role/elb"                       = "1"
     "kubernetes.io/cluster/${var.eks_cluster_name}" = "shared"
   }
@@ -47,12 +49,12 @@ resource "aws_subnet" "private" {
 
   tags = {
     Name = "${var.project_name}-private-${data.aws_availability_zones.available.names[count.index]}"
-    # Lets the AWS Load Balancer Controller discover subnets for internal
-    # (private) load balancers, and lets EKS discover its own subnets.
     "kubernetes.io/role/internal-elb"               = "1"
     "kubernetes.io/cluster/${var.eks_cluster_name}" = "shared"
   }
 }
+
+# NAT gateway and routing tables
 
 # Single NAT Gateway (not one per AZ) — a deliberate cost tradeoff for a
 # dev/assignment environment: ~$0.045/hr per NAT Gateway adds up fast with
