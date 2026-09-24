@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: contactform
+  namespace: {{ app_namespace }}
+  labels:
+    app: contactform
+spec:
+  replicas: {{ app_replicas }}
+  selector:
+    matchLabels:
+      app: contactform
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: contactform
+    spec:
+      serviceAccountName: {{ app_service_account }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: {{ app_uid }}
+        runAsGroup: {{ app_uid }}
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: contactform
+      containers:
+        - name: app
+          image: {{ tf.ecr_repository_url.value }}:{{ app_image_tag }}
+          ports:
+            - containerPort: {{ app_port }}
+          envFrom:
+            - secretRef:
+                name: db-credentials
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ app_port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ app_port }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          volumeMounts:
+            - name: secrets-store
+              mountPath: /mnt/secrets-store
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: db-credentials
+        - name: tmp
+          emptyDir: {}

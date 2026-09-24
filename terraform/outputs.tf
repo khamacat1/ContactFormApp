@@ -49,3 +49,8 @@ output "alb_certificate_arn" {
   description = "ACM certificate ARN for the ALB HTTPS listener"
   value       = aws_acm_certificate.alb.arn
 }
+
+output "app_role_arn" {
+  description = "IAM role ARN for the Flask app's service account"
+  value       = aws_iam_role.app.arn
+}

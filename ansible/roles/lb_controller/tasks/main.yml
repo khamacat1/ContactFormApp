@@ -1,0 +1,22 @@
+- name: Add the EKS Helm chart repository
+  kubernetes.core.helm_repository:
+    name: eks
+    repo_url: https://aws.github.io/eks-charts
+
+- name: Install the AWS Load Balancer Controller
+  kubernetes.core.helm:
+    name: aws-load-balancer-controller
+    chart_ref: eks/aws-load-balancer-controller
+    chart_version: "{{ lb_controller_chart_version }}"
+    release_namespace: kube-system
+    wait: true
+    timeout: 5m
+    values:
+      clusterName: "{{ tf.eks_cluster_name.value }}"
+      region: "{{ aws_region }}"
+      vpcId: "{{ tf.vpc_id.value }}"
+      serviceAccount:
+        create: true
+        name: aws-load-balancer-controller
+        annotations:
+          eks.amazonaws.com/role-arn: "{{ tf.lb_controller_role_arn.value }}"
