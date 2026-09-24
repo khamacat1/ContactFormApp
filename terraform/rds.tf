@@ -43,6 +43,7 @@ resource "random_password" "db" {
 resource "aws_secretsmanager_secret" "db_credentials" {
   name        = "${var.project_name}/db-credentials"
   description = "PostgreSQL credentials for the contact form app"
+  recovery_window_in_days = 0
 
   tags = {
     Name = "${var.project_name}-db-credentials"
