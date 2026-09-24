@@ -1,0 +1,6 @@
+app_namespace: contactform
+app_service_account: contactform-app
+app_port: 5000
+app_replicas: 2
+app_image_tag: v2
+app_uid: 999

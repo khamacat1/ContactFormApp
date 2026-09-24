@@ -1,0 +1,17 @@
+- name: Add the AWS Secrets Manager provider Helm repository
+  kubernetes.core.helm_repository:
+    name: aws-secrets-manager
+    repo_url: https://aws.github.io/secrets-store-csi-driver-provider-aws
+
+- name: Install the AWS Secrets Manager provider (bundles the CSI driver)
+  kubernetes.core.helm:
+    name: secrets-provider-aws
+    chart_ref: aws-secrets-manager/secrets-store-csi-driver-provider-aws
+    chart_version: "{{ secrets_store_aws_provider_chart_version }}"
+    release_namespace: kube-system
+    wait: true
+    timeout: 5m
+    values:
+      secrets-store-csi-driver:
+        syncSecret:
+          enabled: true

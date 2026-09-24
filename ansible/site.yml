@@ -1,0 +1,27 @@
+- name: Deploy the contact form to EKS
+  hosts: localhost
+  gather_facts: false
+
+  pre_tasks:
+    - name: Load Terraform outputs
+      ansible.builtin.include_vars:
+        file: tf_outputs.json
+        name: tf
+
+    - name: Show which cluster we are targeting
+      ansible.builtin.debug:
+        msg: "Cluster {{ tf.eks_cluster_name.value }} in VPC {{ tf.vpc_id.value }}"
+
+    - name: Check we can reach the cluster
+      kubernetes.core.k8s_info:
+        kind: Node
+      register: nodes
+
+    - name: Report node count
+      ansible.builtin.debug:
+        msg: "{{ nodes.resources | length }} nodes reachable"
+
+  roles:
+  - lb_controller
+  - secrets_store
+  - app
