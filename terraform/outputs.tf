@@ -22,3 +22,13 @@ output "db_secret_arn" {
   description = "ARN of the Secrets Manager secret holding DB credentials"
   value       = aws_secretsmanager_secret.db_credentials.arn
 }
+
+output "eks_cluster_name" {
+  description = "Name of the EKS cluster"
+  value       = aws_eks_cluster.main.name
+}
+
+output "ecr_repository_url" {
+  description = "ECR repository URL to push the app image to"
+  value       = aws_ecr_repository.app.repository_url
+}
