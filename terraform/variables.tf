@@ -27,3 +27,14 @@ variable "eks_cluster_name" {
   type        = string
   default     = "contactform-eks"
 }
+
+variable "eks_version" {
+  description = "Kubernetes version for the EKS cluster"
+  type        = string
+  default     = "1.35"
+}
+
+variable "api_access_cidrs" {
+  description = "CIDR blocks allowed to reach the EKS public API endpoint (your workstation's public IP)"
+  type        = list(string)
+}
