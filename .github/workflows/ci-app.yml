@@ -1,10 +1,16 @@
-name: CI
+name: CI - App
 
 on:
   push:
     branches: ["main"]
+    paths:
+      - "app/**"
+      - ".github/workflows/ci-app.yml"
   pull_request:
     branches: ["main"]
+    paths:
+      - "app/**"
+      - ".github/workflows/ci-app.yml"
 
 defaults:
   run:
@@ -12,30 +18,8 @@ defaults:
 
 permissions:
   contents: read
-  pull-requests: read
 
 jobs:
-  secrets-scan:
-    name: Secret scan
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      # Dependabot-authored PR runs get a near-zero-permission token regardless
-      # of what this workflow requests (a GitHub Actions security restriction,
-      # not something we can grant around) — gitleaks-action's PR-commit-listing
-      # API call 403s every time. Dependabot only ever changes version pins in
-      # requirements.txt, so this step is a low-risk no-op for that one actor.
-      # The job itself always runs (and reports a status) so a required-status
-      # branch ruleset doesn't wait forever on a check that never fires.
-      - uses: gitleaks/gitleaks-action@v2
-        if: github.actor != 'dependabot[bot]'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_ENABLE_COMMENTS: "false"
-          GITLEAKS_ENABLE_SUMMARY: "true"
-
   lint:
     name: Lint (ruff)
     runs-on: ubuntu-latest

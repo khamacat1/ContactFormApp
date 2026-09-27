@@ -1,0 +1,61 @@
+name: CI - Terraform
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "terraform/**"
+      - ".github/workflows/ci-terraform.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "terraform/**"
+      - ".github/workflows/ci-terraform.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  fmt-validate:
+    name: Terraform fmt & validate
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Two independent root modules: the bootstrap (state backend) and
+        # the main config. Each needs its own init/validate.
+        working_directory: ["terraform", "terraform/bootstrap"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.16.2"
+
+      - name: terraform fmt -check
+        working-directory: ${{ matrix.working_directory }}
+        run: terraform fmt -check -diff
+
+      # -backend=false: validate the HCL itself without needing AWS
+      # credentials or the real S3/DynamoDB backend in CI.
+      - name: terraform init (no backend)
+        working-directory: ${{ matrix.working_directory }}
+        run: terraform init -backend=false
+
+      - name: terraform validate
+        working-directory: ${{ matrix.working_directory }}
+        run: terraform validate
+
+  tfsec:
+    name: tfsec
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          working_directory: terraform
+          # Informational for now: several findings are deliberate, already-
+          # documented design decisions (e.g. the ALB security group's
+          # 0.0.0.0/0 ingress on 80/443, the public-but-IP-restricted EKS
+          # API endpoint). Findings are reviewed as part of the Step 9
+          # security-hardening pass rather than blocking merges here.
+          soft_fail: true
