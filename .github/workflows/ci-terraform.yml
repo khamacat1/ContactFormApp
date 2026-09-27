@@ -3,21 +3,33 @@ name: CI - Terraform
 on:
   push:
     branches: ["main"]
-    paths:
-      - "terraform/**"
-      - ".github/workflows/ci-terraform.yml"
   pull_request:
     branches: ["main"]
-    paths:
-      - "terraform/**"
-      - ".github/workflows/ci-terraform.yml"
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      terraform: ${{ steps.filter.outputs.terraform }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            terraform:
+              - 'terraform/**'
+              - '.github/workflows/ci-terraform.yml'
+
   fmt-validate:
     name: Terraform fmt & validate
+    needs: changes
+    if: needs.changes.outputs.terraform == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -46,6 +58,8 @@ jobs:
 
   tfsec:
     name: tfsec
+    needs: changes
+    if: needs.changes.outputs.terraform == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

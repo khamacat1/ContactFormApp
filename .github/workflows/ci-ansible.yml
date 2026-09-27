@@ -3,21 +3,33 @@ name: CI - Ansible
 on:
   push:
     branches: ["main"]
-    paths:
-      - "ansible/**"
-      - ".github/workflows/ci-ansible.yml"
   pull_request:
     branches: ["main"]
-    paths:
-      - "ansible/**"
-      - ".github/workflows/ci-ansible.yml"
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      ansible: ${{ steps.filter.outputs.ansible }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            ansible:
+              - 'ansible/**'
+              - '.github/workflows/ci-ansible.yml'
+
   ansible-lint:
     name: Ansible lint
+    needs: changes
+    if: needs.changes.outputs.ansible == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
