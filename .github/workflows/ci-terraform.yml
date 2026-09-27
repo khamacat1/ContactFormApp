@@ -26,34 +26,50 @@ jobs:
               - 'terraform/**'
               - '.github/workflows/ci-terraform.yml'
 
-  fmt-validate:
-    name: Terraform fmt & validate
+  # Two explicit jobs instead of one matrix job — matrix jobs skipped via a
+  # job-level `if:` do not reliably produce their per-matrix-value named
+  # check runs (e.g. "Terraform fmt & validate (terraform)"), which left
+  # those exact required-check names permanently un-reportable on any PR
+  # that doesn't touch terraform/**. Plain jobs with fixed names don't have
+  # this ambiguity.
+  fmt-validate-main:
+    name: Terraform fmt & validate (main)
     needs: changes
     if: needs.changes.outputs.terraform == 'true'
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        # Two independent root modules: the bootstrap (state backend) and
-        # the main config. Each needs its own init/validate.
-        working_directory: ["terraform", "terraform/bootstrap"]
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.16.2"
-
       - name: terraform fmt -check
-        working-directory: ${{ matrix.working_directory }}
+        working-directory: terraform
         run: terraform fmt -check -diff
-
-      # -backend=false: validate the HCL itself without needing AWS
-      # credentials or the real S3/DynamoDB backend in CI.
       - name: terraform init (no backend)
-        working-directory: ${{ matrix.working_directory }}
+        working-directory: terraform
         run: terraform init -backend=false
-
       - name: terraform validate
-        working-directory: ${{ matrix.working_directory }}
+        working-directory: terraform
+        run: terraform validate
+
+  fmt-validate-bootstrap:
+    name: Terraform fmt & validate (bootstrap)
+    needs: changes
+    if: needs.changes.outputs.terraform == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.16.2"
+      - name: terraform fmt -check
+        working-directory: terraform/bootstrap
+        run: terraform fmt -check -diff
+      - name: terraform init (no backend)
+        working-directory: terraform/bootstrap
+        run: terraform init -backend=false
+      - name: terraform validate
+        working-directory: terraform/bootstrap
         run: terraform validate
 
   tfsec:
