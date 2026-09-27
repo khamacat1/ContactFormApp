@@ -1,0 +1,53 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: {{ app_namespace }}
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-app-traffic
+  namespace: {{ app_namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app: contactform
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # From the ALB (its ENIs live in the cluster's own security group, so
+    # we allow from any source in the cluster's pod CIDR on the app port;
+    # the security groups from Step 6 are what actually keep the ALB
+    # itself gated to 80/443 from the internet).
+    - ports:
+        - protocol: TCP
+          port: {{ app_port }}
+  egress:
+    # DNS (CoreDNS lives in kube-system)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # RDS (outside the cluster, so no podSelector/namespaceSelector applies
+    # — NetworkPolicy egress to external IPs is allowed by leaving the
+    # "to" selector matching everything except explicitly restricting the
+    # port; the actual IP-level restriction is the RDS security group)
+    - ports:
+        - protocol: TCP
+          port: 5432
+    # AWS APIs (Secrets Manager, STS for IRSA) over HTTPS
+    - ports:
+        - protocol: TCP
+          port: 443

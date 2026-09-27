@@ -3,14 +3,8 @@ name: CI - App
 on:
   push:
     branches: ["main"]
-    paths:
-      - "app/**"
-      - ".github/workflows/ci-app.yml"
   pull_request:
     branches: ["main"]
-    paths:
-      - "app/**"
-      - ".github/workflows/ci-app.yml"
 
 defaults:
   run:
@@ -18,10 +12,28 @@ defaults:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      app: ${{ steps.filter.outputs.app }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            app:
+              - 'app/**'
+              - '.github/workflows/ci-app.yml'
+
   lint:
     name: Lint (ruff)
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,6 +47,8 @@ jobs:
 
   dependency-audit:
     name: Dependency vulnerability audit
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,6 +62,8 @@ jobs:
 
   docker-build:
     name: Docker build + smoke test
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -73,6 +89,8 @@ jobs:
 
   test:
     name: Test (pytest)
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     services:
       postgres:

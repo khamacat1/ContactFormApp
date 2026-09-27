@@ -13,6 +13,11 @@
     state: present
     template: secretproviderclass.yml.j2
 
+- name: Apply default-deny and app NetworkPolicies
+  kubernetes.core.k8s:
+    state: present
+    template: networkpolicy.yml.j2
+
 - name: Deploy the application
   kubernetes.core.k8s:
     state: present

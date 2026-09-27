@@ -83,6 +83,38 @@ resource "aws_eks_cluster" "main" {
 
 # EKS managed node group
 
+# Launch template: the managed node group doesn't expose IMDSv2 enforcement
+# or EBS encryption directly, so both are set here instead. No ami_id or
+# instance_type set — leaving those out lets EKS inject its own optimized
+# AMI and keeps instance sizing on the node group itself, which is the
+# supported pattern for a launch template used only for these two settings.
+resource "aws_launch_template" "node" {
+  name_prefix = "${var.project_name}-node-"
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required" # IMDSv2 only, no fallback to v1
+    http_put_response_hop_limit = 1          # blocks IMDS access from inside a pod/container
+  }
+
+  block_device_mappings {
+    device_name = "/dev/xvda" # root volume on the AL2023 EKS-optimized AMI
+    ebs {
+      encrypted             = true
+      volume_type           = "gp3"
+      volume_size           = 20
+      delete_on_termination = true
+    }
+  }
+
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      Name = "${var.project_name}-node"
+    }
+  }
+}
+
 resource "aws_eks_node_group" "main" {
   cluster_name    = aws_eks_cluster.main.name
   node_group_name = "${var.project_name}-nodes"
@@ -91,6 +123,11 @@ resource "aws_eks_node_group" "main" {
 
   ami_type       = "AL2023_x86_64_STANDARD"
   instance_types = ["t3.small"]
+
+  launch_template {
+    id      = aws_launch_template.node.id
+    version = aws_launch_template.node.latest_version
+  }
 
   scaling_config {
     desired_size = 2
