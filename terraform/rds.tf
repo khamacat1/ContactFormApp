@@ -35,14 +35,14 @@ resource "aws_security_group" "rds" {
 # Passwords generation and secrets manager
 
 resource "random_password" "db" {
-  length  = 32
-  special = true
+  length           = 32
+  special          = true
   override_special = "!#$%^&*()-_=+[]{}<>:?"
 }
 
 resource "aws_secretsmanager_secret" "db_credentials" {
-  name        = "${var.project_name}/db-credentials"
-  description = "PostgreSQL credentials for the contact form app"
+  name                    = "${var.project_name}/db-credentials"
+  description             = "PostgreSQL credentials for the contact form app"
   recovery_window_in_days = 0
 
   tags = {
@@ -70,8 +70,8 @@ resource "aws_db_instance" "main" {
   instance_class = "db.t3.micro"
 
   allocated_storage = 20
-  storage_type       = "gp3"
-  storage_encrypted  = true
+  storage_type      = "gp3"
+  storage_encrypted = true
 
   db_name  = "contactform"
   username = "contactform"
@@ -82,7 +82,7 @@ resource "aws_db_instance" "main" {
 
   multi_az            = false
   publicly_accessible = false
-  skip_final_snapshot  = true
+  skip_final_snapshot = true
 
   tags = {
     Name = "${var.project_name}-db"
