@@ -22,6 +22,6 @@
         msg: "{{ nodes.resources | length }} nodes reachable"
 
   roles:
-  - lb_controller
-  - secrets_store
-  - app
+    - lb_controller
+    - secrets_store
+    - app
