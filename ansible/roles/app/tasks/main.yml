@@ -35,13 +35,13 @@
     kind: Ingress
     namespace: "{{ app_namespace }}"
     name: contactform
-  register: ingress
+  register: app_ingress
   until: >-
-    ingress.resources | length > 0 and
-    ingress.resources[0].status.loadBalancer.ingress is defined
+    app_ingress.resources | length > 0 and
+    app_ingress.resources[0].status.loadBalancer.ingress is defined
   retries: 30
   delay: 10
 
 - name: Show the application URL
   ansible.builtin.debug:
-    msg: "https://{{ ingress.resources[0].status.loadBalancer.ingress[0].hostname }}"
+    msg: "https://{{ app_ingress.resources[0].status.loadBalancer.ingress[0].hostname }}"

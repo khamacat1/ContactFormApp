@@ -1,0 +1,33 @@
+name: CI - Ansible
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "ansible/**"
+      - ".github/workflows/ci-ansible.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "ansible/**"
+      - ".github/workflows/ci-ansible.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  ansible-lint:
+    name: Ansible lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install ansible-lint and collections
+        run: |
+          pip install ansible-core==2.21.* ansible-lint
+          ansible-galaxy collection install -r ansible/requirements.yml
+      - name: Run ansible-lint
+        working-directory: ansible
+        run: ansible-lint site.yml roles/

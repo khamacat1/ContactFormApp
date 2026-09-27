@@ -2,7 +2,7 @@ data "aws_caller_identity" "current" {}
 
 locals {
   state_bucket_name = "${var.project_name}-tfstate-${data.aws_caller_identity.current.account_id}"
-  lock_table_name    = "${var.project_name}-tfstate-lock"
+  lock_table_name   = "${var.project_name}-tfstate-lock"
 }
 
 resource "aws_s3_bucket" "tfstate" {
