@@ -63,12 +63,13 @@ docker compose down
 
 This app also runs on AWS — EKS, RDS, behind an Application Load Balancer —
 provisioned entirely with Terraform and deployed with Ansible, both run from
-a local workstation (no manual console steps). See the deployment and
-security-hardening documentation for the full cloud architecture and setup
-steps.
+a local workstation.
 
-**Live URL:** the AWS environment is torn down (`terraform destroy`) at the
+The app's production domain is `contactkhama.com`, secured with a real,
+publicly-trusted, DNS-validated ACM certificate.
+
+**Live URL:** the AWS environment is torn down at the
 end of each working session to avoid idle cost, and rebuilt at the start of
-the next — so there is no permanently stable public URL yet. A URL will be
-published here a few days before the live demonstration, once the
-environment is kept running continuously through that date.
+the next — so `contactkhama.com` is only live while the environment is
+actively up. It will be kept running continuously in the days leading up to
+the live demonstration.

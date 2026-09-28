@@ -54,3 +54,12 @@ output "app_role_arn" {
   description = "IAM role ARN for the Flask app's service account"
   value       = aws_iam_role.app.arn
 }
+
+output "acm_validation_record" {
+  description = "DNS record to add manually at the domain registrar (Cloudflare) to prove domain ownership to ACM"
+  value = {
+    name  = tolist(aws_acm_certificate.alb.domain_validation_options)[0].resource_record_name
+    type  = tolist(aws_acm_certificate.alb.domain_validation_options)[0].resource_record_type
+    value = tolist(aws_acm_certificate.alb.domain_validation_options)[0].resource_record_value
+  }
+}

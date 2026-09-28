@@ -61,6 +61,43 @@ resource "aws_cloudwatch_log_group" "eks" {
   retention_in_days = 7
 }
 
+# KMS key for envelope encryption of Kubernetes Secrets at rest in etcd.
+# Set only at cluster creation — cannot be added to an existing cluster
+# without destroying and recreating it (encryption_config is immutable).
+resource "aws_kms_key" "eks_secrets" {
+  description             = "Envelope encryption for ${var.project_name} EKS Kubernetes secrets"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
+}
+
+resource "aws_kms_alias" "eks_secrets" {
+  name          = "alias/${var.project_name}-eks-secrets"
+  target_key_id = aws_kms_key.eks_secrets.key_id
+}
+
+# The key's default policy only grants the account root full access, which
+# lets IAM policies decide access for principals in the account — but the
+# cluster role still needs its own IAM policy granting the specific actions
+# EKS uses to wrap/unwrap Secret data with this key.
+data "aws_iam_policy_document" "eks_secrets_kms" {
+  statement {
+    actions = [
+      "kms:Encrypt",
+      "kms:Decrypt",
+      "kms:DescribeKey",
+      "kms:CreateGrant",
+      "kms:ListGrants",
+    ]
+    resources = [aws_kms_key.eks_secrets.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "eks_secrets_kms" {
+  name   = "${var.project_name}-eks-secrets-kms"
+  role   = aws_iam_role.eks_cluster.id
+  policy = data.aws_iam_policy_document.eks_secrets_kms.json
+}
+
 resource "aws_eks_cluster" "main" {
   name     = var.eks_cluster_name
   version  = var.eks_version
@@ -75,8 +112,16 @@ resource "aws_eks_cluster" "main" {
 
   enabled_cluster_log_types = ["api", "audit", "authenticator"]
 
+  encryption_config {
+    provider {
+      key_arn = aws_kms_key.eks_secrets.arn
+    }
+    resources = ["secrets"]
+  }
+
   depends_on = [
     aws_iam_role_policy_attachment.eks_cluster_policy,
+    aws_iam_role_policy.eks_secrets_kms,
     aws_cloudwatch_log_group.eks,
   ]
 }
