@@ -38,3 +38,9 @@ variable "api_access_cidrs" {
   description = "CIDR blocks allowed to reach the EKS public API endpoint (your workstation's public IP)"
   type        = list(string)
 }
+
+variable "domain_name" {
+  description = "Domain used for the ALB's real, domain-validated TLS certificate (registered externally, delegated to Route 53)"
+  type        = string
+  default     = "contactkhama.com"
+}

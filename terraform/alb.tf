@@ -91,41 +91,20 @@ resource "aws_vpc_security_group_ingress_rule" "pods_from_alb" {
   description                  = "Flask app port from the ALB"
 }
 
-# Self-signed TLS certificate, imported into ACM for the ALB's HTTPS listener
-
-resource "tls_private_key" "alb" {
-  algorithm = "RSA"
-  rsa_bits  = 2048
-}
-
-resource "tls_self_signed_cert" "alb" {
-  private_key_pem = tls_private_key.alb.private_key_pem
-
-  subject {
-    common_name  = "contactform.local"
-    organization = "Contact Form App (self-signed)"
-  }
-
-  dns_names             = ["contactform.local"]
-  validity_period_hours = 8760
-  is_ca_certificate     = false
-
-  allowed_uses = [
-    "key_encipherment",
-    "digital_signature",
-    "server_auth",
-  ]
-}
-
+# Real, publicly-trusted TLS certificate for the ALB — replaces the earlier
+# self-signed one now that a real domain exists. DNS-validated: the domain
+# is registered and DNS-hosted at Cloudflare (not Route 53), so the
+# validation CNAME is added there manually (see acm_validation_record
+# output) rather than fully Terraform-automated.
 resource "aws_acm_certificate" "alb" {
-  private_key      = tls_private_key.alb.private_key_pem
-  certificate_body = tls_self_signed_cert.alb.cert_pem
+  domain_name       = var.domain_name
+  validation_method = "DNS"
 
   lifecycle {
     create_before_destroy = true
   }
 
   tags = {
-    Name = "${var.project_name}-alb-self-signed"
+    Name = "${var.project_name}-alb-cert"
   }
 }
